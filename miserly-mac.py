@@ -32,7 +32,7 @@ for period_price in period_prices:
 
     price = period_price["price"]
     sleep_time = period_price["start"] - datetime.timedelta(minutes=SLEEP_EARLY_MIN)
-    wake_time = period_price["start"] - datetime.timedelta(minutes=WAKE_LATE_MIN)
+    wake_time = period_price["start"] + datetime.timedelta(minutes=WAKE_LATE_MIN)
 
     if sleeping:
         next_potential_event = wake_time
@@ -64,6 +64,6 @@ for period_price in period_prices:
             print "Scheduleing Wake"
             pmset.schedule_wake(wake_time)
 
-    print period_price["start"]
+    print "%s - %f" % (period_price["start"], price)
 
 pmset.print_schedule()

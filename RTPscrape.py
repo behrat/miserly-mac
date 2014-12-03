@@ -1,4 +1,3 @@
-import csv
 import urllib
 import datetime
 import dateutil.parser
@@ -9,41 +8,34 @@ def get_prices_for_day(querydate):
     """
     Returns an iterator of (datetime_starting, price) pairs.
     """
-    datestring = "%02d/%02d/%d" % (querydate.month, querydate.day, querydate.year)
+    datestring = "%02d/%02d/%d" % (querydate.month, querydate.day, querydate.year        )
 
-    download_url = \
-            "https://www2.ameren.com/RetailEnergy/rtpDownload.aspx?Company=19&Date=%s&ptype=D" \
-             % datestring 
-    
-    f = opener.open(download_url)
-    
-    soup = BeautifulSoup(f)
-    viewstate = soup.select("#__VIEWSTATE")[0]['value']
-    eventvalidation = soup.select("#__EVENTVALIDATION")[0]['value']
-    
+
+    download_url = "https://www2.ameren.com/RetailEnergy/RealTimePrices" 
+
     formData = (
-        ('__EVENTVALIDATION', eventvalidation),
-        ('__VIEWSTATE', viewstate),
-        ('ctl00$ContentPlaceHolder1$CompanyCode', '19'),
-        ('ctl00$ContentPlaceHolder1$ccFromDate', datestring),
-        ('ctl00$ContentPlaceHolder1$ccToDate', datestring),
-        ('ctl00$ContentPlaceHolder1$btnSubmit.x', "87"),
-        ('ctl00$ContentPlaceHolder1$btnSubmit.y', '9'),
+        ('DateWanted', datestring),
+        ('Type', 'DayAhead'),
     )
+
     encodedFields = urllib.urlencode(formData)
-    
+   
     f = opener.open(download_url, encodedFields)
     
-    rtpreader = csv.reader(f, delimiter=',')
-    
-    # remove column header
-    rtpreader.next()
+    soup = BeautifulSoup(f)
+    table = soup.find("table", {"class": "priceTable"})
+    rows = table.find_all('tr')
 
-    for row in rtpreader:
-        date_string = row[0]
-        hour_ending = int(row[1])
+    # remove column header
+    rows = rows[1:]
+
+    for row in rows:
+        cols = row.find_all('td')
+
+        date_string = cols[0].text
+        hour_ending = int(cols[1].text.split()[2])
         hour_starting = hour_ending - 1
-        price = float(row[2])
+        price = float(cols[2].text)
 
         date = dateutil.parser.parse(date_string)
         datetime_starting = date + datetime.timedelta(hours=hour_starting)
